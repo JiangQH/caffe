@@ -257,6 +257,10 @@ void HyperColumnsLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     selected_points_.clear();
 }
 
+#ifdef CPU_ONLY
+STUB_GPU(HyperColumnsLayer);
+#endif
+
 INSTANTIATE_CLASS(HyperColumnsLayer);
 REGISTER_LAYER_CLASS(HyperColumns);
 }// namespace caffe
