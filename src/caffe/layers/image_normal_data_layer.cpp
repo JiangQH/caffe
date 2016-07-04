@@ -131,6 +131,8 @@ void ImageNormalDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
                 new_height, new_width, is_color);
         CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
         CHECK(cv_normal.data) << "Could not load " << lines_[lines_id_].second;
+        // for debug
+        LOG(INFO) << "load image " << lines_[lines_id_].first << " load the normal " << lines_[lines_id_].second;
         read_time += timer.MicroSeconds();
         timer.Start();
         // Apply transformations to the image and normal

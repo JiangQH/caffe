@@ -1,3 +1,9 @@
+/*************************************************************************
+	> File Name: hypercolumns_layer.cpp
+	> Author: Jiang Qinhong
+	> Mail: mylivejiang@gmail.com
+	> Created Time: 2016年06月06日 星期一 19时40分04秒
+ ************************************************************************/
 #include <vector>
 #include <map>
 #include <cmath>
@@ -16,8 +22,8 @@ void HyperColumnsLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     Dtype* top_hypercolumns = top[0]->mutable_gpu_data();
     const Dtype* bottom_normal = bottom[0]->gpu_data();
     vector<int> sampling_list;
-    caffe_set(top[1]->count(), Dtype(-1.0), top_normal);
-    caffe_set(top[0]->count(), Dtype(0), top_hypercolumns);
+    caffe_gpu_set(top[1]->count(), Dtype(-1.0), top_normal);
+    caffe_gpu_set(top[0]->count(), Dtype(0), top_hypercolumns);
 
     // for each batch, do the sampling job
     for (int n = 0; n < N_; ++n) {
@@ -79,7 +85,7 @@ void HyperColumnsLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const Dtype* top_diff = top[0]->gpu_diff();
     // first set the value to zero for every bottom diff
     for (int i = 1; i < bottom.size(); ++i) {
-        caffe_set(bottom[i]->count(), Dtype(0), bottom[i]->mutable_gpu_diff());
+        caffe_gpu_set(bottom[i]->count(), Dtype(0), bottom[i]->mutable_gpu_diff());
     }
     
     // do backward
@@ -109,6 +115,5 @@ void HyperColumnsLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     selected_points_.clear();
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(HyperColumnsLayer)
-
-} // namespace caffe
+INSTANTIATE_LAYER_GPU_FUNCS(HyperColumnsLayer);
+}// namespace caffe
