@@ -99,16 +99,16 @@ bool HyperColumnsLayer<Dtype>::is_valid(const Blob<Dtype>* feature_map,
     const int offset1 = feature_map->offset(number, 0);
     const int offset2 = feature_map->offset(number, 1);
     const int offset3 = feature_map->offset(number, 2);
-    const double value1 = get_true_normal(feature_data[offset1+index]);
-    const double value2 = get_true_normal(feature_data[offset2+index]);
-    const double value3 = get_true_normal(feature_data[offset3+index]);
-    return std::abs(value1 * value1 + value2 * value2 + value3 * value3 - 1.0) < 1e-1;
+    const double value1 = feature_data[offset1+index];
+    const double value2 = feature_data[offset2+index];
+    const double value3 = feature_data[offset3+index];
+    return !(value1 == value2 && value2 == value3);
 }
 
 template <typename Dtype>
 double HyperColumnsLayer<Dtype>::get_true_normal(const double normal_map) {
-    double result = normal_map * (2 * 0.00390625);
-    result -= 1;
+    double result = (normal_map / 255 - 0.5) * 2;
+    //result -= 1;
     return result;
 }
 
@@ -179,10 +179,16 @@ void HyperColumnsLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             const int index = sampling_list[id];
             //LOG(INFO) << "for batch " << n << " index is " << index;
             // normal first. Here due to caffe's BGR channel change. need to change the channels back
+           // LOG(INFO) << "-------------Debugging------------selected point is" << index << " batch " << n;
             for (int c = 0; c < top[1]->shape(1); ++c) {
                 const int top_index = top[1]->offset(n * sample_num_ + id, c);
                 const int bottom_index = bottom[0]->offset(n,2-c) + index; // here the channel change
-                top_normal[top_index] = get_true_normal(bottom_normal[bottom_index]);
+                /**
+                const double value = get_true_normal(bottom_normal[bottom_index]);
+                // for debug usage
+                LOG(INFO) << "For normal with bottom index " << bottom_index << " and top index " << top_index << " the value " << value;
+                **/
+                top_normal[top_index] = get_true_normal(bottom_normal[bottom_index]);;
             }
             // hyperfeature next
             int hyper_channel = 0;
@@ -196,13 +202,12 @@ void HyperColumnsLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
                 std::map<int, double> weights;
                 get_map_point(weights, index, original_size);
                 // for debug usage, output the last and first to check
-                /**if (id == 0 || id == sampling_list.size() - 1) {
-                    LOG(INFO) << "for sample point " << id << " the selected point index is " << index << " the bottom is " << bottom_id;
-                    for (std::map<int, double>::iterator iter = weights.begin(); iter != weights.end(); ++iter) {
-                        LOG(INFO) << "the coresponding to bottom " << bottom_id << " point is " << iter->first << " weights is " << iter->second << std::endl;
-                    }
-
-                } **/
+                /**
+                LOG(INFO) << "for sample point " << id ;
+                for (std::map<int, double>::iterator iter = weights.begin(); iter != weights.end(); ++iter) {
+                    LOG(INFO) << "the coresponding to bottom " << bottom_id << " point is " << iter->first << " weights is " << iter->second << std::endl;
+                }
+                **/
                 for (int c = 0; c < channel; ++c){
                     // compute the value, according to the point
                     double value = 0;
@@ -217,6 +222,7 @@ void HyperColumnsLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             }
         }
     }
+   // LOG(INFO) << "forward done";
 }
 
 template <typename Dtype>
@@ -255,11 +261,12 @@ void HyperColumnsLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         }
     }
     selected_points_.clear();
+    // LOG(INFO) << "backward done ";
 }
 
-#ifdef CPU_ONLY
-    STUB_GPU(HyperColumnsLayer);
-#endif
+//#ifdef CPU_ONLY
+//    STUB_GPU(HyperColumnsLayer);
+//#endif
 
 INSTANTIATE_CLASS(HyperColumnsLayer);
 REGISTER_LAYER_CLASS(HyperColumns);

@@ -56,7 +56,7 @@ void ImageNormalDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
         prefetch_rgn_.reset(new Caffe::RNG(prefetch_rgn_seed));
         ShuffleImages();
     }
-    LOG(INFO) << "A total of " << lines_.size() << " images.";
+   // LOG(INFO) << "A total of " << lines_.size() << " images.";
 
     lines_id_ = 0;
     //read an image .use it to init the top blobs(rgb and normal with same size)
@@ -132,7 +132,7 @@ void ImageNormalDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
         CHECK(cv_normal.data) << "Could not load " << lines_[lines_id_].second;
         // for debug
-        LOG(INFO) << "load image " << lines_[lines_id_].first << " load the normal " << lines_[lines_id_].second;
+       // LOG(INFO) << "load image " << lines_[lines_id_].first << " load the normal " << lines_[lines_id_].second;
         read_time += timer.MicroSeconds();
         timer.Start();
         // Apply transformations to the image and normal

@@ -14,6 +14,9 @@
 #include <fstream>  // NOLINT(readability/streams)
 #include <string>
 #include <vector>
+#include <stdio.h>
+#include<stdlib.h>
+
 
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
@@ -70,6 +73,49 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
 }
 
 #ifdef USE_OPENCV
+// self define read normal to cv
+cv::Mat ReadNormalToCVMat(const string& filename,
+        const int rows, const int cols, const int height,
+        const int width, const bool is_color) {
+    FILE *fid;
+    fid = fopen(filename.c_str(), "rb");
+    if (fid == NULL)
+        LOG(ERROR) << "can not open file" << filename;
+    // get the Size
+    fseek(fid, 0, SEEK_END);
+    long lsize = ftell(fid);
+    rewind(fid);
+    // read the data
+    float *buffer;
+    fread((void*)buffer, sizeof(float), lsize/sizeof(float), fid);
+    fclose(fid);
+    //map the data to cv Mat
+    int count = 0;
+    cv::Mat normal(rows, cols, CV_32FC2);
+    int channels = 3;
+    if (!is_color)
+        channels = 1;
+    for (int k = 0; k < channels; ++k) {
+        for ( int c = 0; c < cols; ++c ) {
+            for ( int r = 0; r < rows; ++r ) {
+                normal.at<cv::Vec2f>(r, c)[k] = buffer[count];
+                ++count;
+            }
+        }
+    }
+    // for debug
+    namedWindow("Test", cv::WINDOW_AUTOSIZE);
+    imshow("Test", normal);
+    cv::Mat normal_resize;
+    if (height > 0 && width > 0) {
+        cv::resize(normal, normal_resize, cv::Size(width, height));
+    } else {
+        normal_resize = normal;
+    }
+    return normal_resize;
+}
+
+
 cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width, const bool is_color) {
   cv::Mat cv_img;
