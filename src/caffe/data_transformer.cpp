@@ -400,7 +400,7 @@ void DataTransformer<Dtype>::TransformNormal(const cv::Mat& cv_img, Blob<Dtype>*
     CHECK_LE(height, img_height);
     CHECK_LE(width, img_width);
     CHECK_GE(num, 1);
-    CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
+//    CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
     CHECK_GT(img_channels, 0);
 
 
@@ -408,11 +408,11 @@ void DataTransformer<Dtype>::TransformNormal(const cv::Mat& cv_img, Blob<Dtype>*
     CHECK_EQ(img_width, width);
     cv::Mat cv_copy_img = cv_img;
     CHECK(cv_copy_img.data);
-
+    //LOG(INFO) << cv_copy_img.at<cv::Vec3f>(120,213)[1] << " inside transformer";
     Dtype* transformed_data = transformed_blob->mutable_cpu_data();
     int top_index;
     for (int h = 0; h < height; ++h) {
-        const uchar* ptr = cv_copy_img.ptr<uchar>(h);
+        const float* ptr = cv_copy_img.ptr<float>(h);
         int img_index = 0;
         for (int w = 0; w < width; ++w) {
             for (int c = 0; c < img_channels; ++c) {

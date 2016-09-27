@@ -1,6 +1,6 @@
 /*************************************************************************
 	> File Name: image_normal_data_layer.cpp
-	> Author: 
+	> Author: Jiang Qinhong
 	> Mail: 
 	> Created Time: 2016年06月03日 星期五 14时07分02秒
  ************************************************************************/
@@ -56,7 +56,7 @@ void ImageNormalDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
         prefetch_rgn_.reset(new Caffe::RNG(prefetch_rgn_seed));
         ShuffleImages();
     }
-   // LOG(INFO) << "A total of " << lines_.size() << " images.";
+    LOG(INFO) << "A total of " << lines_.size() << " images.";
 
     lines_id_ = 0;
     //read an image .use it to init the top blobs(rgb and normal with same size)
@@ -120,19 +120,21 @@ void ImageNormalDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     Dtype* prefetch_label = batch->label_.mutable_cpu_data();
 
     //datum scales
-    const int lines_size = lines_.size();
+    const long lines_size = lines_.size();
     for (int item_id = 0; item_id < batch_size; ++item_id) {
         // get a blob
         timer.Start();
         CHECK_GT(lines_size, lines_id_);
+        int rows, cols;
         cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
+                new_height, new_width, is_color, rows, cols);
+        cv::Mat cv_normal = ReadNormalToCVMat(root_folder + lines_[lines_id_].second, rows, cols,
                 new_height, new_width, is_color);
-        cv::Mat cv_normal = ReadImageToCVMat(root_folder + lines_[lines_id_].second,
-                new_height, new_width, is_color);
+       // LOG(INFO) << cv_normal.at<cv::Vec3f>(120,213)[1] << " outside";
         CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
         CHECK(cv_normal.data) << "Could not load " << lines_[lines_id_].second;
         // for debug
-       // LOG(INFO) << "load image " << lines_[lines_id_].first << " load the normal " << lines_[lines_id_].second;
+        LOG(INFO) << "load image " << lines_[lines_id_].first << " load the normal " << lines_[lines_id_].second;
         read_time += timer.MicroSeconds();
         timer.Start();
         // Apply transformations to the image and normal

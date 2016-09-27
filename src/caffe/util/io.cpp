@@ -77,6 +77,7 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
 cv::Mat ReadNormalToCVMat(const string& filename,
         const int rows, const int cols, const int height,
         const int width, const bool is_color) {
+
     FILE *fid;
     fid = fopen(filename.c_str(), "rb");
     if (fid == NULL)
@@ -86,34 +87,64 @@ cv::Mat ReadNormalToCVMat(const string& filename,
     long lsize = ftell(fid);
     rewind(fid);
     // read the data
-    float *buffer;
-    fread((void*)buffer, sizeof(float), lsize/sizeof(float), fid);
-    fclose(fid);
-    //map the data to cv Mat
-    int count = 0;
-    cv::Mat normal(rows, cols, CV_32FC2);
     int channels = 3;
     if (!is_color)
         channels = 1;
+    float buffer[rows * cols * channels];
+    long size = fread(buffer, sizeof(float), lsize/sizeof(float), fid);
+    fclose(fid);
+    if (size != rows * cols * channels)
+        exit(2);
+    //map the data to cv Mat
+    int count = 0;
+    cv::Mat normal(rows, cols, CV_32FC3);
     for (int k = 0; k < channels; ++k) {
         for ( int c = 0; c < cols; ++c ) {
             for ( int r = 0; r < rows; ++r ) {
-                normal.at<cv::Vec2f>(r, c)[k] = buffer[count];
+             //   float value = (float)buffer[count];
+                normal.at<cv::Vec3f>(r, c)[k] = buffer[count];
+              //  if ( r == 100 && c == 121) {
+              //    LOG(INFO) << " before " << value;
+               //   LOG(INFO) << " after " << normal.at<cv::Vec3f>(r, c)[k];
+               // } debug
                 ++count;
             }
         }
     }
     // for debug
-    namedWindow("Test", cv::WINDOW_AUTOSIZE);
-    imshow("Test", normal);
+//    cv::namedWindow("Test", cv::WINDOW_AUTOSIZE);
+ //   cv::imshow("Test", normal);
     cv::Mat normal_resize;
     if (height > 0 && width > 0) {
-        cv::resize(normal, normal_resize, cv::Size(width, height));
+      cv::resize(normal, normal_resize, cv::Size(width, height));
     } else {
-        normal_resize = normal;
+      normal_resize = normal;
     }
+    //LOG(INFO) << normal_resize.at<cv::Vec3f>(120,213)[1] << " inside";
     return normal_resize;
 }
+
+cv::Mat ReadImageToCVMat(const string& filename,
+     const int height, const int width, const bool is_color, int &rows, int &cols) {
+  cv::Mat cv_img;
+  int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
+                      CV_LOAD_IMAGE_GRAYSCALE);
+  cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
+  rows = cv_img_origin.rows;
+  cols = cv_img_origin.cols;
+  if (!cv_img_origin.data) {
+    LOG(ERROR) << "Could not open or find file " << filename;
+    return cv_img_origin;
+  }
+  if (height > 0 && width > 0) {
+    cv::resize(cv_img_origin, cv_img, cv::Size(width, height));
+  } else {
+    cv_img = cv_img_origin;
+  }
+  return cv_img;
+}
+
+
 
 
 cv::Mat ReadImageToCVMat(const string& filename,
@@ -147,6 +178,8 @@ cv::Mat ReadImageToCVMat(const string& filename,
 cv::Mat ReadImageToCVMat(const string& filename) {
   return ReadImageToCVMat(filename, 0, 0, true);
 }
+
+
 
 // Do the file extension and encoding match?
 static bool matchExt(const std::string & fn,
