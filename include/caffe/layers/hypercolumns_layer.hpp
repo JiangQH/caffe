@@ -52,6 +52,7 @@ protected:
 
     vector<int> selected_points_; // the selected point
     bool is_train_;
+    int skip_ratio_; // this item is need when do test, skip some point to save time
     int N_, K_, H_, W_; // the N, K, H, W of normal map
     int sample_num_; // sample_num per batch
     int total_channels_; // the channels_ of the hypercolumns
@@ -59,14 +60,14 @@ protected:
     vector<int> scalef_;
     vector<Dtype> padf_;
     vector<int> channels_; // store the channels for every bottom
-    vector<double> mappings_; // for temp debug use now
+
     // for the use of gpu, I declare some elements here to avoid the multi-declare and save time
     int* cuda_samplelist_;
     int *cuda_widths_, *cuda_heights_, *cuda_channels_;
     double* cuda_map_lists_; // store the (tempw, temph, fh, fw, ch, cw) for every index in the sample map. so the size
                             // should be 6 * bottom_count * total_index
     bool cuda_instanced_;
-
+    vector<double> mappings_;
 private:
 
 

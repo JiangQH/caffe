@@ -117,16 +117,21 @@ void HyperColumnsLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // generate the sampling list and copy it
     CUDA_CHECK(cudaMemcpy(cuda_samplelist_, &selected_points_[0], selected_points_.size()* sizeof(int), cudaMemcpyHostToDevice));
 
+
     Dtype* top_normal = top[1]->mutable_gpu_data();
+    caffe_gpu_set(top[1]->count(), Dtype(0.0), top_normal);
     const Dtype* bottom_normal = bottom[0]->gpu_data();
     const int count1 = top[1]->count();
     ForwardNormal<Dtype><<<CAFFE_GET_BLOCKS(count1), CAFFE_CUDA_NUM_THREADS>>>(
-      count1, bottom_normal, N_, K_, H_, W_, sample_num_, cuda_samplelist_, top_normal
+            count1, bottom_normal, N_, K_, H_, W_, sample_num_, cuda_samplelist_, top_normal
     );
+
+
 
 
     // then forward the hypercolumns
     Dtype* top_hypercolumns = top[0]->mutable_gpu_data();
+    caffe_gpu_set(top[0]->count(), Dtype(0.0), top_hypercolumns);
     const int bottom_count = bottom.size();
     /**
     vector<const Dtype*> bottom_datas;
@@ -154,7 +159,7 @@ void HyperColumnsLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // here, in order to save time. I have to decide to use the hard coding
     // which means I will fix the total bottoms here
     // a bug. cannot use vector here
-    const int nthreads = N_ * sample_num_ * total_channels_;
+    const int nthreads = top[0]->count();
     ForwardHypercolumns<Dtype><<<CAFFE_GET_BLOCKS(nthreads), CAFFE_CUDA_NUM_THREADS>>>(
         nthreads, bottom_count, bottom[1]->gpu_data(), bottom[2]->gpu_data(),bottom[3]->gpu_data(),bottom[4]->gpu_data(),
         bottom[5]->gpu_data(),bottom[6]->gpu_data(),cuda_channels_, cuda_heights_, cuda_widths_, cuda_map_lists_,
@@ -254,8 +259,11 @@ void HyperColumnsLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         bottom_diffs.push_back(bottom[i]->mutable_gpu_diff());
     }
     **/
+    for (int i = 1; i < bottom.size(); ++i) {
+        caffe_gpu_set(bottom[i]->count(), Dtype(0.0), bottom[i]->mutable_gpu_diff());
+    }
     const int bottom_count = bottom.size();
-    const int nthreads = N_ * sample_num_ * total_channels_;
+    const int nthreads = top[0]->count();
     BackwardHypercolumns<Dtype><<<CAFFE_GET_BLOCKS(nthreads), CAFFE_CUDA_NUM_THREADS>>>(
         nthreads, bottom_count, bottom[1]->mutable_gpu_diff(), bottom[2]->mutable_gpu_diff(),
         bottom[3]->mutable_gpu_diff(), bottom[4]->mutable_gpu_diff(),bottom[5]->mutable_gpu_diff(),
