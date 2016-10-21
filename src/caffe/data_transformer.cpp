@@ -388,9 +388,9 @@ bool DataTransformer<Dtype>::TransformImg(const cv::Mat& cv_img, Blob<Dtype>* tr
 
 template<typename Dtype>
 void DataTransformer<Dtype>::TransformLabel(const cv::Mat& cv_label, Blob<Dtype>* transformed_blob, bool do_mirror){
-    const int img_channels = cv_img.channels();
-    const int img_height = cv_img.rows;
-    const int img_width = cv_img.cols;
+    const int img_channels = cv_label.channels();
+    const int img_height = cv_label.rows;
+    const int img_width = cv_label.cols;
     //check dimensions.
     const int channels = transformed_blob->channels();
     const int height = transformed_blob->height();
@@ -400,19 +400,19 @@ void DataTransformer<Dtype>::TransformLabel(const cv::Mat& cv_label, Blob<Dtype>
     CHECK_LE(height, img_height);
     CHECK_LE(width, img_width);
     CHECK_GE(num, 1);
-//    CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
+//    CHECK(cv_label.depth() == CV_8U) << "Image data type must be unsigned byte";
     CHECK_GT(img_channels, 0);
 
 
     CHECK_EQ(img_height, height);
     CHECK_EQ(img_width, width);
-    cv::Mat cv_copy_img = cv_img;
-    CHECK(cv_copy_img.data);
-    //LOG(INFO) << cv_copy_img.at<cv::Vec3f>(120,213)[1] << " inside transformer";
+    cv::Mat cv_copy_label = cv_label;
+    CHECK(cv_copy_label.data);
+    //LOG(INFO) << cv_copy_laebl.at<cv::Vec3f>(120,213)[1] << " inside transformer";
     Dtype* transformed_data = transformed_blob->mutable_cpu_data();
     int top_index;
     for (int h = 0; h < height; ++h) {
-        const float* ptr = cv_copy_img.ptr<float>(h);
+        const float* ptr = cv_copy_label.ptr<float>(h);
         int img_index = 0;
         for (int w = 0; w < width; ++w) {
             for (int c = 0; c < img_channels; ++c) {
