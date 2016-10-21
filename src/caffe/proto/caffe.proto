@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 149 (last added: pixel_wise_data_param)
+// LayerParameter next available layer-specific ID: 150 (last added: discrete_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -405,6 +405,14 @@ message LayerParameter {
   optional HyperColumnsParameter hypercolumns_param = 146;
   optional NormalizeParameter norm_param = 147;
   optional PixelWiseDataParameter pixel_wise_data_param = 148;
+  optional DiscreteParameter discrete_param = 150;
+}
+
+message DiscreteParameter {
+  // specify the discretization space
+  optional string space = 1 [default = "linear"];
+  // specify the discretization number
+  optional uint32 num = 2 [default = 60];
 }
 
 message PixelWiseDataParameter {
