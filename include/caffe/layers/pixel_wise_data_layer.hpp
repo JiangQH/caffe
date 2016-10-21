@@ -2,8 +2,8 @@
  * load the image and its corresponding normalmap
  * if do flipping. do both
  * */
-#ifndef CAFFE_IMAGE_NORMAL_DATA_LAYER_HPP_
-#define CAFFE_IMAGE_NORMAL_DATA_LAYER_HPP_
+#ifndef CAFFE_PIXEL_WISE_DATA_LAYER_HPP_
+#define CAFFE_PIXEL_WISE_DATA_LAYER_HPP_
 
 #include <string>
 #include <utility>
@@ -22,12 +22,12 @@ namespace caffe {
  * @Jiang Qinhong. mail: mylivejiang@gmail.com
  * */
 template <typename Dtype>
-class ImageNormalDataLayer: public BasePrefetchingDataLayer<Dtype> {
+class PixelWiseDataLayer: public BasePrefetchingDataLayer<Dtype> {
 public:
-    explicit ImageNormalDataLayer(const LayerParameter& param)
+    explicit PixelWiseDataLayer(const LayerParameter& param)
         : BasePrefetchingDataLayer<Dtype>(param) {}
 
-    virtual ~ImageNormalDataLayer();
+    virtual ~PixelWiseDataLayer();
     virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
                                const vector<Blob<Dtype>*>& top);
 
@@ -39,9 +39,9 @@ protected:
     shared_ptr<Caffe::RNG> prefetch_rgn_;
     virtual void ShuffleImages();
     virtual void load_batch(Batch<Dtype>* batch);
-    vector<std::pair<std::string, std::string> > lines_; // store the image and normal path
+    vector<std::pair<std::string, std::string> > lines_; // store the image and label path
     int lines_id_;
 };
 
 }// namespace caffe
-#endif //CAFFE_IMAGE_NORMAL_DATA_LAYER_HPP_
+#endif //CAFFE_PIXEL_WISE_DATA_LAYER_HPP_

@@ -1,5 +1,5 @@
 /*************************************************************************
-	> File Name: image_normal_data_layer.cpp
+	> File Name: pixel_wise_data_layer.cpp
 	> Author: Jiang Qinhong
 	> Mail: 
 	> Created Time: 2016年06月03日 星期五 14时07分02秒
@@ -15,7 +15,7 @@
 
 #include "caffe/data_transformer.hpp"
 #include "caffe/layers/base_data_layer.hpp"
-#include "caffe/layers/image_normal_data_layer.hpp"
+#include "caffe/layers/pixel_wise_data_layer.hpp"
 #include "caffe/util/benchmark.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -24,22 +24,22 @@
 namespace caffe {
 
 template <typename Dtype>
-ImageNormalDataLayer<Dtype>::~ImageNormalDataLayer<Dtype>() {
+PixelWiseDataLayer<Dtype>::~PixelWiseDataLayer<Dtype>() {
     this->StopInternalThread();
 }
 
 template <typename Dtype>
-void ImageNormalDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void PixelWiseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
         const vector<Blob<Dtype>*>& top) {
-    const int new_height = this->layer_param_.image_data_param().new_height();
-    const int new_width = this->layer_param_.image_data_param().new_width();
-    const bool is_color = this->layer_param_.image_data_param().is_color();
-    string root_folder = this->layer_param_.image_data_param().root_folder();
-
+    const int new_height = this->layer_param_.pixel_wise_data_param().new_height();
+    const int new_width = this->layer_param_.pixel_wise_data_param().new_width();
+    const bool is_color = this->layer_param_.pixel_wise_data_param().is_color();
+    string root_folder = this->layer_param_.pixel_wise_data_param().root_folder();
+    const int label_channel = this->layer_param_.pixel_wise_data_param().label_channel();
     CHECK((new_height == 0 && new_width == 0) || 
             (new_height > 0 && new_width >0)) << "new_height and new_width should be set at the same time";
     // read the file with filenames and read the coresponding normals both
-    const string& source = this->layer_param_.image_data_param().source();
+    const string& source = this->layer_param_.pixel_wise_data_param().source();
     LOG(INFO) << "opeing file " << source;
     std::ifstream infile(source.c_str());
     string line;
@@ -49,7 +49,7 @@ void ImageNormalDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
         lines_.push_back(std::make_pair(line.substr(0, pos), line.substr(pos+1)));
     }
 
-    if(this->layer_param_.image_data_param().shuffle()) {
+    if(this->layer_param_.pixel_wise_data_param().shuffle()) {
         //randomly shuffle data
         LOG(INFO) << "Shuffing data";
         const unsigned int prefetch_rgn_seed = caffe_rng_rand();
@@ -67,7 +67,7 @@ void ImageNormalDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
     vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
     this->transformed_data_.Reshape(top_shape);
     // reshape prefetch_data and top[0], top[1] according to the batch_size
-    const int batch_size = this->layer_param_.image_data_param().batch_size();
+    const int batch_size = this->layer_param_.pixel_wise_data_param().batch_size();
     CHECK_GT(batch_size, 0) << "Positive batch size required";
     top_shape[0] = batch_size;
     for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
@@ -75,14 +75,18 @@ void ImageNormalDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bot
         this->prefetch_[i].label_.Reshape(top_shape);
     }
     top[0]->Reshape(top_shape);
+    top_shape[1] = label_channel;
     top[1]->Reshape(top_shape);
-    LOG(INFO) << "output data size: " << top[0]->num() << ","
+    LOG(INFO) << "output image data size: " << top[0]->num() << ","
         << top[0]->channels() << "," << top[0]->height() << ","
         << top[0]->width();
+    LOG(INFO) << "output label data size: " << top[1]->num() << ","
+        << top[1]->channels() << "," << top[1]->height() << ","
+        << top[1]->width();
 }
 
 template <typename Dtype>
-void ImageNormalDataLayer<Dtype>::ShuffleImages() {
+void PixelWiseDataLayer<Dtype>::ShuffleImages() {
     caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rgn_->generator());
     shuffle(lines_.begin(), lines_.end(), prefetch_rng);
@@ -90,7 +94,7 @@ void ImageNormalDataLayer<Dtype>::ShuffleImages() {
 
 // this function is called on prefetch thread
 template <typename Dtype>
-void ImageNormalDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
+void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     CPUTimer batch_timer;
     batch_timer.Start();
     double read_time = 0;
@@ -98,12 +102,12 @@ void ImageNormalDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     CPUTimer timer;
     CHECK(batch->data_.count());
     CHECK(this->transformed_data_.count());
-    ImageDataParameter image_data_param = this->layer_param_.image_data_param();
-    const int batch_size = image_data_param.batch_size();
-    const int new_height = image_data_param.new_height();
-    const int new_width = image_data_param.new_width();
-    const bool is_color = image_data_param.is_color();
-    string root_folder = image_data_param.root_folder();
+    ImageDataParameter pixel_wise_data_param = this->layer_param_.pixel_wise_data_param();
+    const int batch_size = pixel_wise_data_param.batch_size();
+    const int new_height = pixel_wise_data_param.new_height();
+    const int new_width = pixel_wise_data_param.new_width();
+    const bool is_color = pixel_wise_data_param.is_color();
+    string root_folder = pixel_wise_data_param.root_folder();
     //Reshape according to the first image of each batch
     //on single input btaches allows for inputs of varying dimension.
     cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
@@ -150,7 +154,7 @@ void ImageNormalDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         if (lines_id_ >= lines_size) {
             DLOG(INFO) << "Restarting data prefetching from start.";
             lines_id_ = 0;
-            if (this->layer_param_.image_data_param().shuffle()) {
+            if (this->layer_param_.pixel_wise_data_param().shuffle()) {
                 ShuffleImages();
             }
         }
