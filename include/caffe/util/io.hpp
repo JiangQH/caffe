@@ -130,9 +130,9 @@ bool DecodeDatumNative(Datum* datum);
 bool DecodeDatum(Datum* datum, bool is_color);
 
 #ifdef USE_OPENCV
-cv::Mat ReadNormalToCVMat(const string& filename,
+cv::Mat ReadLabelToCVMat(const string& filename,
     const int rows, const int cols, const int height,
-    const int width, const bool is_color);
+    const int width, const int label_channel);
 
 cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width, const bool is_color);

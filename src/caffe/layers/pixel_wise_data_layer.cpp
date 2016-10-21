@@ -38,7 +38,7 @@ void PixelWiseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     const int label_channel = this->layer_param_.pixel_wise_data_param().label_channel();
     CHECK((new_height == 0 && new_width == 0) || 
             (new_height > 0 && new_width >0)) << "new_height and new_width should be set at the same time";
-    // read the file with filenames and read the coresponding normals both
+    // read the file with filenames and read the coresponding labels both
     const string& source = this->layer_param_.pixel_wise_data_param().source();
     LOG(INFO) << "opeing file " << source;
     std::ifstream infile(source.c_str());
@@ -59,7 +59,7 @@ void PixelWiseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     LOG(INFO) << "A total of " << lines_.size() << " images.";
 
     lines_id_ = 0;
-    //read an image .use it to init the top blobs(rgb and normal with same size)
+    //read an image .use it to init the top blobs(rgb and label with same size)
     cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
                                     new_height, new_width, is_color);
     CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
@@ -102,11 +102,12 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     CPUTimer timer;
     CHECK(batch->data_.count());
     CHECK(this->transformed_data_.count());
-    ImageDataParameter pixel_wise_data_param = this->layer_param_.pixel_wise_data_param();
+    PixelWiseDataParameter pixel_wise_data_param = this->layer_param_.pixel_wise_data_param();
     const int batch_size = pixel_wise_data_param.batch_size();
     const int new_height = pixel_wise_data_param.new_height();
     const int new_width = pixel_wise_data_param.new_width();
     const bool is_color = pixel_wise_data_param.is_color();
+    const int label_channel = pixel_wise_data_param.label_channel();
     string root_folder = pixel_wise_data_param.root_folder();
     //Reshape according to the first image of each batch
     //on single input btaches allows for inputs of varying dimension.
@@ -118,6 +119,7 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     // Reshape batch according to the batch_size.
     top_shape[0] = batch_size;
     batch->data_.Reshape(top_shape);
+    top_shape[1] = label_channel;
     batch->label_.Reshape(top_shape);
 
     Dtype* prefetch_data = batch->data_.mutable_cpu_data();
@@ -132,22 +134,22 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         int rows, cols;
         cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
                 new_height, new_width, is_color, rows, cols);
-        cv::Mat cv_normal = ReadNormalToCVMat(root_folder + lines_[lines_id_].second, rows, cols,
-                new_height, new_width, is_color);
-       // LOG(INFO) << cv_normal.at<cv::Vec3f>(120,213)[1] << " outside";
+        cv::Mat cv_label = ReadLabelToCVMat(root_folder + lines_[lines_id_].second, rows, cols,
+                new_height, new_width, label_channel);
+       // LOG(INFO) << cv_label.at<cv::Vec3f>(120,213)[1] << " outside";
         CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
-        CHECK(cv_normal.data) << "Could not load " << lines_[lines_id_].second;
+        CHECK(cv_label.data) << "Could not load " << lines_[lines_id_].second;
         // for debug
-        //LOG(INFO) << "load image " << lines_[lines_id_].first << " load the normal " << lines_[lines_id_].second;
+        //LOG(INFO) << "load image " << lines_[lines_id_].first << " load the label " << lines_[lines_id_].second;
         read_time += timer.MicroSeconds();
         timer.Start();
-        // Apply transformations to the image and normal
+        // Apply transformations to the image and label
         int offset = batch->data_.offset(item_id);
         this->transformed_data_.set_cpu_data(prefetch_data + offset);
         bool do_mirror = this->data_transformer_->TransformImg(cv_img, &(this->transformed_data_));
         offset = batch->label_.offset(item_id);
         this->transformed_data_.set_cpu_data(prefetch_label + offset);
-        this->data_transformer_->TransformNormal(cv_normal, &(this->transformed_data_), do_mirror);
+        this->data_transformer_->TransformLabel(cv_label, &(this->transformed_data_), do_mirror);
         trans_time += timer.MicroSeconds();
         // go to the next iter
         lines_id_++;
@@ -165,8 +167,8 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     DLOG(INFO) << "Transform time: " << trans_time / 1000<< " ms.";
 }
 
-INSTANTIATE_CLASS(ImageNormalDataLayer);
-REGISTER_LAYER_CLASS(ImageNormalData);
+INSTANTIATE_CLASS(PixelWiseDataLayer);
+REGISTER_LAYER_CLASS(PixelWiseData);
 
 
 }//namespace caffe

@@ -74,9 +74,9 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
 
 #ifdef USE_OPENCV
 // self define read normal to cv
-cv::Mat ReadNormalToCVMat(const string& filename,
+cv::Mat ReadLabelToCVMat(const string& filename,
         const int rows, const int cols, const int height,
-        const int width, const bool is_color) {
+        const int width, const int label_channel) {
 
     FILE *fid;
     fid = fopen(filename.c_str(), "rb");
@@ -87,14 +87,15 @@ cv::Mat ReadNormalToCVMat(const string& filename,
     long lsize = ftell(fid);
     rewind(fid);
     // read the data
-    int channels = 3;
-    if (!is_color)
-        channels = 1;
+    int channels = label_channel;
     float buffer[rows * cols * channels];
     long size = fread(buffer, sizeof(float), lsize/sizeof(float), fid);
     fclose(fid);
-    if (size != rows * cols * channels)
-        exit(2);
+    if (size != rows * cols * channels) {
+      LOG(ERROR) << "label file does not agree with the given row, col and channel";
+      exit(2);
+    }
+        
     //map the data to cv Mat
     int count = 0;
     cv::Mat normal(rows, cols, CV_32FC3);

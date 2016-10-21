@@ -77,13 +77,13 @@ class DataTransformer {
   void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
 
   /** Jiang Qinhong
-   * self design Transform, only need part of the functions used in Transforme.
+   * self design Transform, only need part of the functions used in Transform.
    * but it needs to return a bool flag to indicate whether to do mirror to 
-   * the rgb image. because if doing, the normal image should be doing so.
+   * the rgb image. because if doing, the label map should be doing so.
    *
    * */
   bool TransformImg(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
-  void TransformNormal(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, bool do_mirror);
+  void TransformLabel(const cv::Mat& cv_label, Blob<Dtype>* transformed_blob, bool do_mirror);
 #endif  // USE_OPENCV
 
   /**

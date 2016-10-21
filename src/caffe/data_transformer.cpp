@@ -325,7 +325,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 }
 
 // blow is self design interface. do some simple transform to both the data and 
-// normal img. so it needs to indicate
+// label map. so it needs to indicate
 template<typename Dtype>
 bool DataTransformer<Dtype>::TransformImg(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob){
     const int img_channels = cv_img.channels();
@@ -387,7 +387,7 @@ bool DataTransformer<Dtype>::TransformImg(const cv::Mat& cv_img, Blob<Dtype>* tr
 }
 
 template<typename Dtype>
-void DataTransformer<Dtype>::TransformNormal(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob, bool do_mirror){
+void DataTransformer<Dtype>::TransformLabel(const cv::Mat& cv_label, Blob<Dtype>* transformed_blob, bool do_mirror){
     const int img_channels = cv_img.channels();
     const int img_height = cv_img.rows;
     const int img_width = cv_img.cols;
