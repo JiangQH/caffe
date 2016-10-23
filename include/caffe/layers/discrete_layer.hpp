@@ -39,6 +39,14 @@ protected:
 		/* since it often used behind the data layer. so no backworad is needed*/
 	}
 
+	virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+	virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+		/* since it often used behind the data layer. so no backworad is needed*/
+	}
+
 private:
     int discrete_num_;
     std::string discrete_space_;
