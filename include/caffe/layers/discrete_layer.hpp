@@ -2,7 +2,7 @@
 #define CAFFE_DISCRETE_LAYER_HPP_
 
 #include <vector>
-
+#include <string>
 #include "caffe/blob.hpp"
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
@@ -17,7 +17,7 @@ class DiscreteLayer: public Layer<Dtype> {
 
 public:
 	explicit DiscreteLayer<const LayerParameter& param> : 
-		Layer(param) {/*some thing*/}
+		Layer(param) {/*some thing*/ transform_ = false; }
 
 	virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
                            const vector<Blob<Dtype>*>& top);
@@ -39,8 +39,16 @@ protected:
 		/* since it often used behind the data layer. so no backworad is needed*/
 	}
 
+private:
+    int discrete_num_;
+    std::string discrete_space_;
+    std::string discrete_method_;
+	int discrete_per_channel_;
+	double discrete_min_, discrete_max_;
 
-
+	int N_, K_, H_, W_;
+	double delta_;
+	bool transform_;
 };// end of class
 
  }//namespace caffe

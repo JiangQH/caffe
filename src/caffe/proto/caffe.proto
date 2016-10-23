@@ -413,6 +413,12 @@ message DiscreteParameter {
   optional string space = 1 [default = "linear"];
   // specify the discretization number
   optional uint32 num = 2 [default = 60];
+  // method used to discrete space
+  optional string method = 3 [default = "ordinary"]; 
+  // maximum and minimum. used only when do ordinary discrete
+  optional float mins = 4 [default = 1];
+  optional float maxs = 5 [default = 12];
+
 }
 
 message PixelWiseDataParameter {
