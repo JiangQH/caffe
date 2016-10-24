@@ -16,8 +16,8 @@ template <typename Dtype>
 class DiscreteLayer: public Layer<Dtype> {
 
 public:
-	explicit DiscreteLayer<const LayerParameter& param> : 
-		Layer(param) {/*some thing*/ transform_ = false; }
+	explicit DiscreteLayer(const LayerParameter& param) : 
+		Layer<Dtype>(param) {/*some thing*/ transform_ = false; }
 
 	virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
                            const vector<Blob<Dtype>*>& top);
@@ -43,9 +43,7 @@ protected:
       const vector<Blob<Dtype>*>& top);
 
 	virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-		/* since it often used behind the data layer. so no backworad is needed*/
-	}
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
 private:
     int discrete_num_;

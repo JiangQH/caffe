@@ -56,4 +56,11 @@ void DiscreteLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       		delta_, discrete_min_
       );
 }
+
+template <typename Dtype>
+void DiscreteLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+      /** do nothing **/
+}
+
 }// namespace caffe

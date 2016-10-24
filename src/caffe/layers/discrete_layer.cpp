@@ -71,7 +71,7 @@ void DiscreteLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 	top_shape.push_back(1);// the lable channel is 1
 	top_shape.push_back(H_);
 	top_shape.push_back(W_);
-	top[0]->reshape(top_shape);
+	top[0]->Reshape(top_shape);
 }
 
 
@@ -92,7 +92,7 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 					int label = 0;
 					for (int k = 0; k < K_; ++k) {
 						const int bottom_offset = top_offset + k * H_ * W_;
-						const Dtype value = bottom_data[bottom_offset];
+						Dtype value = bottom_data[bottom_offset];
 						if (transform_) {
 							value = (value / 2 + 0.5) * 255; // when it is normal . do transform
 						}
@@ -115,13 +115,15 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			}
 		}
 	}
+}
 	
 
-/**
+
 #ifdef CPU_ONLY
-	STUB_GPU(DiscreteLayer);
+    STUB_GPU(DiscreteLayer);
 #endif
-**/
+
 INSTANTIATE_CLASS(DiscreteLayer);
 REGISTER_LAYER_CLASS(Discrete);
+
 }// namespace caffe
