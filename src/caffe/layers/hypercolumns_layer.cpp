@@ -342,12 +342,14 @@ void HyperColumnsLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
 template <typename Dtype>
 HyperColumnsLayer<Dtype>::~HyperColumnsLayer() {
-    CUDA_CHECK(cudaFree(cuda_samplelist_));
-    CUDA_CHECK(cudaFree(cuda_widths_));
-    CUDA_CHECK(cudaFree(cuda_heights_));
-    CUDA_CHECK(cudaFree(cuda_channels_));
-    CUDA_CHECK(cudaFree(cuda_map_lists_));
-    CUDA_POST_KERNEL_CHECK;
+    #ifndef CPU_ONLY
+        CUDA_CHECK(cudaFree(cuda_samplelist_));
+        CUDA_CHECK(cudaFree(cuda_widths_));
+        CUDA_CHECK(cudaFree(cuda_heights_));
+        CUDA_CHECK(cudaFree(cuda_channels_));
+        CUDA_CHECK(cudaFree(cuda_map_lists_));
+        CUDA_POST_KERNEL_CHECK;
+    #endif
     cuda_instanced_ = false;
 }
 
