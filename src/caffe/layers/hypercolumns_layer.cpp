@@ -27,11 +27,15 @@ void HyperColumnsLayer<Dtype>::generate_list(const Blob<Dtype>* feature_map) {
             int sample_index = 0;
             for (int j = 0; j < sample_num_; ++j) {
                 selected_points_.push_back(sample_index);
-                sample_index += skip_ratio_;
+                sample_index += skip_ratio_; // here add the skip ratio to do acceleration
             }
         }
     } 
     else {
+        double invalid_value = Dtype(0.0);
+        if (judge_condition_ == "label") {
+            invalid_value = Dtype(-1.0);
+        }
         // do the random sample job
         vector<int> holds;
         for(int i = 0; i < H_*W_; ++i) {
@@ -47,7 +51,7 @@ void HyperColumnsLayer<Dtype>::generate_list(const Blob<Dtype>* feature_map) {
                 const int index = holds[j];
                 // check whether it is valid, and the value of each channel not all be zero
                 bool valid = true;
-                int zero_count = 0;
+                int invalid_count = 0;
                 // data check
                 for (int c = 0; c < K_; ++c) {
                     const int offset = feature_map->offset(i, c);
@@ -56,12 +60,12 @@ void HyperColumnsLayer<Dtype>::generate_list(const Blob<Dtype>* feature_map) {
                         valid = false;
                         break;
                     }
-                    if (value == Dtype(0.0)) {
-                        ++zero_count;
+                    if (value == invalid_value) {
+                        ++invalid_count; // maybe another judge ? add one condition
                     }
                 }
                 // assign
-                if (valid && zero_count != K_) {
+                if (valid && invalid_count != K_) {
                     selected_points_.push_back(index);
                     ++count;
                 }
@@ -84,6 +88,10 @@ void HyperColumnsLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     // top: top[0] hypercolumns, top[1] the corresponding sampled normal point
     is_train_ = this->layer_param_.hypercolumns_param().is_train();
     skip_ratio_ = this->layer_param_.hypercolumns_param().skip_ratio();
+    judge_condition_ = this->layer_param_.hypercolumns_param().judge_condition();
+    if (judge_condition_ != "value" || judge_condition_ != "label") {
+        LOG(ERROR) << "Unrecognized judge condiction. be value or label";
+    }
     const Blob<Dtype>* normal_map = bottom[0];
     N_ = normal_map->shape(0);
     K_ = normal_map->shape(1);

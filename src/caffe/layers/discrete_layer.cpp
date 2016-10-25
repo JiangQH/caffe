@@ -44,7 +44,7 @@ void DiscreteLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
        		transform_ = true;
        }
        if (discrete_space_ == "linear") {
-       		delta_ = (discrete_max_ - discrete_min_) / discrete_num_;
+       		delta_ = (discrete_max_ - discrete_min_) / discrete_per_channel_;
        }
        else if (discrete_space_ == "log"){
        		// add one to the value to avoid log(0)
@@ -52,7 +52,7 @@ void DiscreteLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
        		discrete_max_ += 1;
        		discrete_max_ = log(discrete_max_);
        		discrete_min_ = log(discrete_min_);
-       		delta_ = (discrete_max_ - discrete_min_) / discrete_num_;
+       		delta_ = (discrete_max_ - discrete_min_) / discrete_per_channel_;
        }
        else {
            LOG(ERROR) << "Unrecognized discrete space. be linear or log";
@@ -96,9 +96,13 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 					const int top_offset = (n * H_ + h ) * W_ + w;
 					// get the value and index accoding to the bottom value
 					int label = 0;
-					for (int k = 0; k < K_; ++k) {
-						const int bottom_offset = top_offset + k * H_ * W_;
+                    int zero_count = 0;
+					for (int kk = 0; kk < K_; ++kk) {
+						const int bottom_offset = top_offset + kk * H_ * W_;
 						Dtype value = bottom_data[bottom_offset];
+                        if (value == 0) {
+                            ++zero_count;
+                        }
 						if (transform_) {
 							value = (value / 2 + 0.5) * 255; // when it is normal . do transform
 						}
@@ -107,20 +111,18 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 							value = log(value);
 						}
 						int indicate = (value - discrete_min_) / delta_;
-                        /**
-                        if (value != 0) {
-                            LOG(INFO) << value << " " << indicate;
-                        }
-                         **/
 						if (indicate < 0) {
 							indicate = 0;
 						}
-						if (indicate >= discrete_num_) {
-							indicate = discrete_num_ - 1;
+						if (indicate >= discrete_per_channel_) {
+							indicate = discrete_per_channel_ - 1;
 						}
-						label = label * discrete_num_ + indicate;// assign the label				}
+						label = label * discrete_per_channel_ + indicate;// assign the label
 					}
 					// assign the top with label
+                    if (zero_count == K_) {
+                        label = -1; // here used to seperate the valid and invalid
+                    }
 					top_data[top_offset] = label;
 				}
 			}

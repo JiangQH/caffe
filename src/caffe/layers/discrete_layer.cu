@@ -11,7 +11,7 @@ namespace caffe {
 template <typename Dtype>
 __global__ void ForwardLabel(const int nthreads,
 	Dtype* const top_data, const Dtype* bottom_data, const int k, const int h, const int w,
-	const int discrete_num, bool log_space,
+	const int discrete_per_channel, bool log_space,
 	bool transform, const double delta, const double discrete_min
 	) {
 	CUDA_KERNEL_LOOP(index, nthreads) {
@@ -32,10 +32,10 @@ __global__ void ForwardLabel(const int nthreads,
 			if (indicate < 0) {
 				indicate = 0;
 			}
-			if (indicate >= discrete_num) {
-				indicate = discrete_num - 1;
+			if (indicate >= discrete_per_channel) {
+				indicate = discrete_per_channel - 1;
 			}
-            lable = lable * discrete_num + indicate;
+            lable = lable * discrete_per_channel + indicate;
 		}
 		top_data[top_offset] = lable;
 	}
@@ -58,7 +58,7 @@ void DiscreteLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
                 log_space = true;
             }
             ForwardLabel<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-            count, top_data, bottom_data, K_, H_, W_, discrete_num_, log_space, transform_,
+            count, top_data, bottom_data, K_, H_, W_, discrete_per_channel_, log_space, transform_,
             delta_, discrete_min_
             );
       }
