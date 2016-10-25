@@ -25,7 +25,7 @@ void DiscreteLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     H_ = bottom[0]->shape(2);
     W_ = bottom[0]->shape(3);
     // do the check
-    if (discrete_method_ == "odinary") {
+    if (discrete_method_ == "ordinary") {
         // check the num and space if legal
        CHECK_GT(discrete_num_, 0) << "The discrete num must be larger than 0";
        CHECK(discrete_space_ == "linear" || discrete_space_ == "log") <<
@@ -44,20 +44,26 @@ void DiscreteLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
        		transform_ = true;
        }
        if (discrete_space_ == "linear") {
-       		delta_ = (discrete_max_ - discrete_max_) / discrete_num_;
+       		delta_ = (discrete_max_ - discrete_min_) / discrete_num_;
        }
-       else {
+       else if (discrete_space_ == "log"){
        		// add one to the value to avoid log(0)
        		discrete_min_ += 1;
        		discrete_max_ += 1;
        		discrete_max_ = log(discrete_max_);
        		discrete_min_ = log(discrete_min_);
-       		delta_ = discrete_max_ - discrete_min_ / discrete_num_;
+       		delta_ = (discrete_max_ - discrete_min_) / discrete_num_;
+       }
+       else {
+           LOG(ERROR) << "Unrecognized discrete space. be linear or log";
        }
     }
-    else {
+    else if (discrete_method_ == "clustering"){
         // using the clustering. todo
 
+    }
+    else {
+        LOG(ERROR) << "Unrecognized discrete method, be ordinary or clustering.";
     }
 }
 
@@ -101,6 +107,11 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 							value = log(value);
 						}
 						int indicate = (value - discrete_min_) / delta_;
+                        /**
+                        if (value != 0) {
+                            LOG(INFO) << value << " " << indicate;
+                        }
+                         **/
 						if (indicate < 0) {
 							indicate = 0;
 						}
@@ -115,6 +126,9 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			}
 		}
 	}
+    else {
+        // todo
+    }
 }
 	
 
