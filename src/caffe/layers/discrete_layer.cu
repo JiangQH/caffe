@@ -17,10 +17,14 @@ __global__ void ForwardLabel(const int nthreads,
 	CUDA_KERNEL_LOOP(index, nthreads) {
 		const int top_offset = index;
 		// get the label
-		int lable = 0;
+		int lable = Dtype(0);
+        int zero_count = 0;
 		for (int kk = 0; kk < k; ++kk) {
 			const int bottom_offset = top_offset + kk * h * w;
 			Dtype value = bottom_data[bottom_offset];
+            if (value == 0) {
+                ++zero_count;
+            }
 			if (transform) {
 				value = (value / 2 + 0.5) * 255;
 			}
@@ -37,6 +41,9 @@ __global__ void ForwardLabel(const int nthreads,
 			}
             lable = lable * discrete_per_channel + indicate;
 		}
+        if (zero_count == k) {
+            lable = Dtype(-1);
+        }
 		top_data[top_offset] = lable;
 	}
 }
@@ -50,9 +57,9 @@ void DiscreteLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       Dtype* top_data = top[0]->mutable_gpu_data();
       const Dtype* bottom_data = bottom[0]->gpu_data();
       caffe_gpu_set(top[0]->count(), Dtype(0), top_data);
-      const int count = bottom[0]->count();
+      const int count = top[0]->count();
 
-      if (discrete_method_ == "oridnary") {
+      if (discrete_method_ == "ordinary") {
             bool log_space = false;
             if (discrete_space_ == "log") {
                 log_space = true;

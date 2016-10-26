@@ -65,25 +65,11 @@ protected:
 
     // for the use of gpu, I declare some elements here to avoid the multi-declare and save time
     int* cuda_samplelist_;
-    int *cuda_widths_, *cuda_heights_, *cuda_channels_;
-    double* cuda_map_lists_; // store the (tempw, temph, fh, fw, ch, cw) for every index in the sample map. so the size
-                            // should be 6 * bottom_count * total_index
     bool cuda_instanced_;
-    vector<double> mappings_;
+
 private:
-
-
-
-    void generate_bilinear_map(); // this function is used to do the map generation at the first time, to avoid multiple
-                                  // computation in the gpu version
-
     void generate_list(const Blob<Dtype>* feature_map); // generate random list
     
-    double get_true_normal(const double normal_map);// get the true normal value according to the  normal_map point
-
-    bool is_valid(const Blob<Dtype>* feature_map, int batch, int index);
-
-    void instance_cuda_data();
 };// end of HyperColumnsLayer
 }// namespace caffe
 #endif // CAFFE_HYPERCOLUMNS_LAYER_HPP_
