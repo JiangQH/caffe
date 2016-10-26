@@ -196,7 +196,8 @@ void HyperColumnsLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             if (i == 0 || (i == N_*sample_num_-1)) {
                 LOG(INFO) << "for point " << i << " bottom " << b-1 << "the corresponding is "  << fw
                           << " " << fh << " " << cw << " " << ch;
-            }**/
+            }
+             **/
             // assign values
             if ((fw == cw) && (fh == ch)) {
                 int offset = slice +  fh * width_[b] + fw;

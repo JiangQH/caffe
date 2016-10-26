@@ -64,7 +64,7 @@ __global__ void ForwardHypercolumns(const int nthreads,
         if (v + 1 >= bottom_height)
             delta_c = 0;
         // assign the value, notice the boundary check
-        double value = 0;
+        Dtype value = 0;
         if ((1 - delta_r) * (1 - delta_c) != 0)
             value += bottom_slice[u * bottom_height + v] * (1 - delta_r) * (1 - delta_c);
         if (delta_r * (1 - delta_c) != 0)
@@ -89,6 +89,9 @@ void HyperColumnsLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         cuda_instanced_ = true;
     }
     CUDA_CHECK(cudaMemcpy(cuda_samplelist_, &selected_points_[0], selected_points_.size()* sizeof(int), cudaMemcpyHostToDevice));
+    //LOG(INFO) << "hypercolumns forward 1st points with "<<selected_points_[0];
+    //LOG(INFO) << "hypercolumns forward last points with "<<selected_points_[sample_num_-1];
+
     // normal
     Dtype* top_normal = top[1]->mutable_gpu_data();
     caffe_gpu_set(top[1]->count(), Dtype(0.0), top_normal);
