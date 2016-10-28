@@ -93,12 +93,12 @@ void DiscreteLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		for (int n = 0; n < N_; ++n) {
 			for (int h = 0; h < H_; ++h) {
 				for (int w = 0; w < W_; ++w) {
-					const int top_offset = (n * H_ + h ) * W_ + w;
 					// get the value and index accoding to the bottom value
 					int label = 0;
                     int zero_count = 0;
+					const int top_offset = ((n*1 + 0) * H_ + h)*W_ + w;
 					for (int kk = 0; kk < K_; ++kk) {
-						const int bottom_offset = top_offset + kk * H_ * W_;
+						const int bottom_offset = ((n*K_ + kk)*H_ + h)*W_+w;
 						Dtype value = bottom_data[bottom_offset];
                         if (value == 0) {
                             ++zero_count;

@@ -16,11 +16,15 @@ __global__ void ForwardLabel(const int nthreads,
 	) {
 	CUDA_KERNEL_LOOP(index, nthreads) {
 		const int top_offset = index;
+		const int num = top_offset / (h * w);
+		const int ww = (top_offset - num * h * w) % w;
+		const int hh = (top_offset - num * h * w) / w;
 		// get the label
 		int lable = Dtype(0);
         int zero_count = 0;
+		const int bottom_base = (num * k * h + hh)*w + ww;
 		for (int kk = 0; kk < k; ++kk) {
-			const int bottom_offset = top_offset + kk * h * w;
+			const int bottom_offset = bottom_base + kk * h * w;
 			Dtype value = bottom_data[bottom_offset];
             if (value == 0) {
                 ++zero_count;
