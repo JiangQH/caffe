@@ -459,8 +459,8 @@ message HyperColumnsParameter {
     optional bool is_train = 1 [default = true];
     optional int32 sample_num = 2 [default = 1000];
     optional int32 skip_ratio = 3 [default = 1];
-    // when do sample. how to judge the invalid point? here value by 0, label by -1
-    optional string judge_condition = 4 [default = "value"];
+    // what is the invalid value? here value by 0, label by -1
+    optional float invalid_condition = 4 [default = 0];
 }
 // Message that stores parameters used by NormalizeLayer
 message NormalizeParameter {

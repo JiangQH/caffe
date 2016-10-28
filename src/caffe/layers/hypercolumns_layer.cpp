@@ -32,10 +32,7 @@ void HyperColumnsLayer<Dtype>::generate_list(const Blob<Dtype>* feature_map) {
         }
     } 
     else {
-        double invalid_value = Dtype(0.0);
-        if (judge_condition_ == "label") {
-            invalid_value = Dtype(-1.0);
-        }
+        double invalid_value = Dtype(invalid_condition_);
         // do the random sample job
         vector<int> holds;
         for(int i = 0; i < H_*W_; ++i) {
@@ -88,9 +85,9 @@ void HyperColumnsLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     // top: top[0] hypercolumns, top[1] the corresponding sampled normal point
     is_train_ = this->layer_param_.hypercolumns_param().is_train();
     skip_ratio_ = this->layer_param_.hypercolumns_param().skip_ratio();
-    judge_condition_ = this->layer_param_.hypercolumns_param().judge_condition();
-    if (judge_condition_ != "value" || judge_condition_ != "label") {
-        LOG(ERROR) << "Unrecognized judge condiction. be value or label";
+    invalid_condition_ = this->layer_param_.hypercolumns_param().invalid_condition();
+    if (!(invalid_condition_ == 0 || invalid_condition_ == -1)) {
+        LOG(ERROR) << "Unrecognized invalid condition. be 0 or -1";
     }
     const Blob<Dtype>* normal_map = bottom[0];
     N_ = normal_map->shape(0);
