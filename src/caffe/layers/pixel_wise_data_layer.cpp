@@ -38,6 +38,10 @@ void PixelWiseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     const int label_channel = this->layer_param_.pixel_wise_data_param().label_channel();
     CHECK((new_height == 0 && new_width == 0) || 
             (new_height > 0 && new_width >0)) << "new_height and new_width should be set at the same time";
+    const int label_height = this->layer_param_.pixel_wise_data_param().label_height() > 0 ? this->layer_param_.pixel_wise_data_param().label_height() : new_height;
+    const int label_width = this->layer_param_.pixel_wise_data_param().label_width() > 0 ? this->layer_param_.pixel_wise_data_param().label_width() : new_width;
+    //CHECK((label_height == 0 && label_width == 0) || 
+    //        (label_height > 0 && label_width >0)) << "label_height and label_width should be set at the same time";
     // read the file with filenames and read the coresponding labels both
     const string& source = this->layer_param_.pixel_wise_data_param().source();
     LOG(INFO) << "opeing file " << source;
@@ -65,18 +69,23 @@ void PixelWiseDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
     CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
     // use data_transformer to infer the expected blob shape from a cv_image
     vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
+    vector<int> top_label_shape = top_shape;
+    top_label_shape[1] = label_channel;
+    top_label_shape[2] = label_height;
+    top_label_shape[3] = label_width;
     this->transformed_data_.Reshape(top_shape);
+    this->transformed_label_.Reshape(top_label_shape);
     // reshape prefetch_data and top[0], top[1] according to the batch_size
     const int batch_size = this->layer_param_.pixel_wise_data_param().batch_size();
     CHECK_GT(batch_size, 0) << "Positive batch size required";
     top_shape[0] = batch_size;
+    top_label_shape[0] = batch_size;
     for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
         this->prefetch_[i].data_.Reshape(top_shape);
-        this->prefetch_[i].label_.Reshape(top_shape);
+        this->prefetch_[i].label_.Reshape(top_label_shape);
     }
     top[0]->Reshape(top_shape);
-    top_shape[1] = label_channel;
-    top[1]->Reshape(top_shape);
+    top[1]->Reshape(top_label_shape);
     LOG(INFO) << "output image data size: " << top[0]->num() << ","
         << top[0]->channels() << "," << top[0]->height() << ","
         << top[0]->width();
@@ -108,6 +117,8 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     const int new_width = pixel_wise_data_param.new_width();
     const bool is_color = pixel_wise_data_param.is_color();
     const int label_channel = pixel_wise_data_param.label_channel();
+    const int label_height = this->layer_param_.pixel_wise_data_param().label_height() > 0 ? this->layer_param_.pixel_wise_data_param().label_height() : new_height;
+    const int label_width = this->layer_param_.pixel_wise_data_param().label_width() > 0 ? this->layer_param_.pixel_wise_data_param().label_width() : new_width;
     string root_folder = pixel_wise_data_param.root_folder();
     //Reshape according to the first image of each batch
     //on single input btaches allows for inputs of varying dimension.
@@ -115,13 +126,17 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
             new_height, new_width, is_color);
     CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
     vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
+    vector<int> top_label_shape = top_shape;
+    top_label_shape[1] = label_channel;
+    top_label_shape[2] = label_height;
+    top_label_shape[3] = label_width;	
     this->transformed_data_.Reshape(top_shape);
+    this->transformed_label_.Reshape(top_label_shape);
     // Reshape batch according to the batch_size.
     top_shape[0] = batch_size;
+    top_label_shape[0] = batch_size;
     batch->data_.Reshape(top_shape);
-    top_shape[1] = label_channel;
-    batch->label_.Reshape(top_shape);
-
+    batch->label_.Reshape(top_label_shape);
     Dtype* prefetch_data = batch->data_.mutable_cpu_data();
     Dtype* prefetch_label = batch->label_.mutable_cpu_data();
 
@@ -134,8 +149,11 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         int rows, cols;
         cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
                 new_height, new_width, is_color, rows, cols);
-        cv::Mat cv_label = ReadLabelToCVMat(root_folder + lines_[lines_id_].second, rows, cols,
-                new_height, new_width, label_channel);
+
+	//LOG(INFO) << label_channel;
+ 	cv::Mat cv_label = ReadLabelToCVMat(root_folder + lines_[lines_id_].second, rows, cols,
+                label_height, label_width, label_channel);
+	//LOG(INFO) << cv_label.channels();
        // LOG(INFO) << cv_label.at<cv::Vec3f>(120,213)[1] << " outside";
         CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
         CHECK(cv_label.data) << "Could not load " << lines_[lines_id_].second;
@@ -143,13 +161,16 @@ void PixelWiseDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         //LOG(INFO) << "load image " << lines_[lines_id_].first << " load the label " << lines_[lines_id_].second;
         read_time += timer.MicroSeconds();
         timer.Start();
+
         // Apply transformations to the image and label
         int offset = batch->data_.offset(item_id);
         this->transformed_data_.set_cpu_data(prefetch_data + offset);
         bool do_mirror = this->data_transformer_->TransformImg(cv_img, &(this->transformed_data_));
+
+
         offset = batch->label_.offset(item_id);
-        this->transformed_data_.set_cpu_data(prefetch_label + offset);
-        this->data_transformer_->TransformLabel(cv_label, &(this->transformed_data_), do_mirror);
+        this->transformed_label_.set_cpu_data(prefetch_label + offset);
+        this->data_transformer_->TransformLabel(cv_label, &(this->transformed_label_), do_mirror);
         trans_time += timer.MicroSeconds();
         // go to the next iter
         lines_id_++;

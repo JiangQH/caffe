@@ -5,6 +5,7 @@
 *.lo
 *.o
 *.cuo
+cmake-build-debug
 
 # Compiled Dynamic libraries
 *.so

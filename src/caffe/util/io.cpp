@@ -98,12 +98,13 @@ cv::Mat ReadLabelToCVMat(const string& filename,
         
     //map the data to cv Mat
     int count = 0;
-    cv::Mat normal(rows, cols, CV_32FC3);
+    cv::Mat normal;
+    normal.create(rows, cols, CV_32FC(channels));
     for (int k = 0; k < channels; ++k) {
         for ( int c = 0; c < cols; ++c ) {
             for ( int r = 0; r < rows; ++r ) {
              //   float value = (float)buffer[count];
-                normal.at<cv::Vec3f>(r, c)[k] = buffer[count];
+                normal.at<float>(r, c, k) = buffer[count];
               //  if ( r == 100 && c == 121) {
               //    LOG(INFO) << " before " << value;
                //   LOG(INFO) << " after " << normal.at<cv::Vec3f>(r, c)[k];
@@ -112,6 +113,7 @@ cv::Mat ReadLabelToCVMat(const string& filename,
             }
         }
     }
+   // LOG(INFO) << "inside the data " << normal.channels();
     // for debug
 //    cv::namedWindow("Test", cv::WINDOW_AUTOSIZE);
  //   cv::imshow("Test", normal);

@@ -79,6 +79,8 @@ class BasePrefetchingDataLayer :
   BlockingQueue<Batch<Dtype>*> prefetch_full_;
 
   Blob<Dtype> transformed_data_;
+  // new add
+  Blob<Dtype> transformed_label_;
 };
 
 }  // namespace caffe
